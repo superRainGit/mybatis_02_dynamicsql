@@ -1,0 +1,61 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>cn.zhang.mybatis</groupId>
+	<artifactId>mybatis_02_dynamicsql</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+
+	<properties>
+		<cn.zhang.junit.version>4.12</cn.zhang.junit.version>
+		<cn.zhang.mysqlconnector.version>5.1.6</cn.zhang.mysqlconnector.version>
+		<cn.zhang.mybatis.version>3.4.1</cn.zhang.mybatis.version>
+		<cn.zhang.log4j.version>1.2.17</cn.zhang.log4j.version>
+		<cn.zhang.mybatis-ehcache.version>1.0.0</cn.zhang.mybatis-ehcache.version>
+		<cn.zhang.ehcache-core.version>2.6.9</cn.zhang.ehcache-core.version>
+		<cn.zhang.slf4j-log4j12.version>1.6.1</cn.zhang.slf4j-log4j12.version>
+	</properties>
+
+	<dependencies>
+		<!-- 导入log4j的Jar包 -->
+		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+			<version>${cn.zhang.log4j.version}</version>
+		</dependency>
+		<!-- 导入mybatis的Jar包 -->
+		<dependency>
+			<groupId>org.mybatis</groupId>
+			<artifactId>mybatis</artifactId>
+			<version>${cn.zhang.mybatis.version}</version>
+		</dependency>
+		<!-- 配置数据库驱动包 -->
+		<dependency>
+			<groupId>mysql</groupId>
+			<artifactId>mysql-connector-java</artifactId>
+			<version>${cn.zhang.mysqlconnector.version}</version>
+		</dependency>
+		<!-- 配置测试类使用的Jar包 -->
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>${cn.zhang.junit.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mybatis</groupId>
+			<artifactId>mybatis-ehcache</artifactId>
+			<version>${cn.zhang.mybatis-ehcache.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>net.sf.ehcache</groupId>
+			<artifactId>ehcache-core</artifactId>
+			<version>${cn.zhang.ehcache-core.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-log4j12</artifactId>
+			<version>${cn.zhang.slf4j-log4j12.version}</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+</project>

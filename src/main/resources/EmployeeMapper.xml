@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.zhang.dao.EmployeeMapper">
+	<!-- 引用缓存:namespace:指定和哪个namespace下的cache使用同样的缓存 -->
+<!-- 	<cache-ref namespace=""/> -->
+	<cache type="org.mybatis.caches.ehcache.EhcacheCache"></cache>
+	<!--  
+		cache上的属性决定了缓存的一些策略
+		eviction:缓存的回收策略:当缓存的内容超出了范围之后 删除哪些缓存数据
+			• LRU – 最近最少使用的:移除最长时间不被使用的对象
+			• FIFO – 先进先出:按对象进入缓存的顺序来移除它们
+			• SOFT – 软引用:移除基于垃圾回收器状态和软引用规则的对象
+			• WEAK – 弱引用:更积极的移除基于垃圾收集器状态和弱引用规则的对象
+			• 默认的是LRU
+		flushInterval:缓存刷新间隔
+			缓存多长时间清空一次，默认不清空，可以设置一个毫秒值来进行清空
+		readOnly:是否只读
+			true:只读；mybatis认为所有从缓存中获取数据的操作都是只读操作，不会修改数据
+					mybatis为了加快获取速度，直接就会将数据在缓存中的引用交给用户。不安全，但是速度快
+			false:非只读；mybatis认为获取的数据可能会被修改
+					mybatis会利用序列化&反序列化技术克隆一份新的数据给你。安全，速度相对慢一点
+		size:缓存存放多少元素
+		type:指定在定义缓存的全类名:实现Cache接口
+	-->
+<!-- 	<cache eviction="FIFO" flushInterval="60000" readOnly="true" size="1024"></cache> -->
+	
+	<!--  
+		• if:判断
+		• choose (when, otherwise):分支选择:类似于Java中的switch-case
+		• trim 字符串截取(where[封装查询条件], set[封装修改方法])
+		• foreach
+	-->
+	<!-- 查询员工，要求，携带了哪个字段查询条件就带上这个字段 -->
+	<select id="getEmpsByConditionIf" resultType="cn.zhang.beans.Employee">
+		SELECT * FROM EMPLOYEE
+		<where>
+			<!-- 
+				test:编写测试表达式(OGNL表达式) 
+				判断的时候使用从参数中获取的值
+				如果遇见特殊字符，可以使用转义字符
+				例如:&&:使用&amp;&amp;进行替代
+			--> 
+			<if test="id != null">
+				AND ID = #{id}
+			</if>
+			<if test="lastName != null &amp;&amp; lastName != ''">
+				AND LAST_NAME LIKE #{lastName}
+			</if>
+			<!-- OGNL表达式会将数据进行字符串与数字的转换 -->
+			<if test="gender == 0 or gender == 1">
+				AND GENDER = #{gender}
+			</if>
+			<if test="email != null">
+				AND EMAIL = #{email}
+			</if>
+		</where>
+	</select>
+	
+	<select id="getEmpsByConditionTrim" resultType="cn.zhang.beans.Employee">
+		SELECT * FROM EMPLOYEE
+		<!-- 此时的and连接符放在的每一个语句的末尾   这样where标签是不会将and连接符去掉的 -->
+		<!-- 所以此处使用trim标签进行问题的解决 -->
+<!-- 		<where> -->
+		<!--  
+			trim标签的属性:trim标签体中的是整个字符串拼串后的结果[自定义字符串的截取规则]
+				prefix="":前缀:为拼串后的整个字符串增加一个前缀
+				prefixOverrides="":前缀覆盖:去掉整个字符串前面多余的字符
+				suffix="":后缀:给拼串后的整个字符串加一个后缀
+				suffixOverrides="":后缀覆盖:去掉这个字符串后面多余的字符
+		-->
+		<trim prefix="where" suffixOverrides="and">
+			<if test="id != null">
+				ID = #{id} AND
+			</if>
+			<if test="lastName != null &amp;&amp; lastName != ''">
+				LAST_NAME LIKE #{lastName} AND
+			</if>
+			<!-- OGNL表达式会将数据进行字符串与数字的转换 -->
+			<if test="gender == 0 or gender == 1">
+				GENDER = #{gender} AND
+			</if>
+			<if test="email != null">
+				EMAIL = #{email}
+			</if>
+		</trim>
+<!-- 		</where> -->
+	</select>
+	
+	<!-- 场景:如果带了id就用id查，如果带了lastName就用lastName查；只会进入其中的一个 -->
+	<select id="getEmpsByConditionChoose" resultType="cn.zhang.beans.Employee">
+		SELECT * FROM EMPLOYEE
+		<where>
+			<choose>
+				<when test="id != null">
+					ID = #{id}
+				</when>
+				<when test="lastName != null">
+					LAST_NAME LIKE #{lastName}
+				</when>
+				<when test="email != null">
+					EMAIL = #{email}
+				</when>
+				<otherwise>
+					1 = 1
+				</otherwise>
+			</choose>
+		</where>
+	</select>
+	
+	<!-- 测试条件更新 -->
+	<update id="updateEmp">
+		UPDATE EMPLOYEE
+		<set>
+			<if test="lastName != null">
+				last_name = #{lastName},
+			</if>
+			<if test="gender != null">
+				gender = #{gender},
+			</if>
+			<if test="email != null">
+				email = #{email}
+			</if>
+		</set>
+		<where>
+			id = #{id}
+		</where>
+	</update>
+	
+	<!-- 测试for-each -->
+	<select id="getEmpsByConditionForEach" resultType="cn.zhang.beans.Employee">
+		SELECT * FROM EMPLOYEE WHERE ID IN
+		<!-- 使用for-each将in语句中的数字进行动态的传入 -->
+		<!--  
+			collection:指定要遍历的集合
+				list类型的参数会特殊处理封装到map中 map的key就是list
+			item:将遍历出的元素赋值给指定的变量
+			separator:每个元素之间的分隔符
+			open:遍历出所有的结果  然后拼接一个开始字符
+			close:遍历出的所有结果  然后拼接一个结束字符
+			index:索引  遍历list的时候是索引,item表示的是当前的值
+				遍历map的时候是index表示的map的key,item表示的是map的值
+			使用#{变量名}就能取出变量的值,也就是当前遍历出的元素
+		-->
+		<foreach collection="list" item="item_id" separator="," open="(" close=")">
+			#{item_id}
+		</foreach>
+	</select>
+	
+	<!-- 批量保存 -->
+	<!-- MySql下批量保存:可以for-each遍历， mysql支持values(),(),()语法 -->
+	<!-- 另一种批量插入的方法是发送多条sql语句 -->
+	<insert id="addEmps2">
+		INSERT INTO EMPLOYEE(LAST_NAME, EMAIL, GENDER, D_ID) VALUES 
+		<foreach collection="emps" item="emp" separator=",">
+			(#{emp.lastName}, #{emp.email}, #{emp.gender}, #{emp.dept.id})
+		</foreach>
+	</insert>
+	
+	<!--  
+		mysql默认是无法执行多条使用";"进行分隔的sql语句的,因此  如果想要使用此特性 加上allowMultiQueries=true即可
+		这种";"分割多个sql可以用于其他的批量操作(删除、修改)
+	-->
+	<insert id="addEmps">
+		<foreach collection="emps" item="emp" separator=";">
+			INSERT INTO EMPLOYEE(
+				<include refid="insertColumn">
+					<property name="testColumn" value="GENDER"/>
+				</include>
+			) VALUES 
+			(#{emp.lastName}, #{emp.email}, #{emp.gender}, #{emp.dept.id})
+		</foreach>
+	</insert>
+	
+	<!-- 
+		两个内置参数 
+			不只是方法传递过来的参数可以被用来判断和取值
+			mybatis还有两个默认的内置参数
+			_parameter:代表整个参数
+				单个参数：_parameter就是这个参数
+				多个参数：参数会被封装成一个map，_parameter就是代表这个map
+			_databaseId:如果配置了databaseIdProvider标签。
+				_databaseId就是代表当前数据库的别名
+	-->
+	<select id="getEmpsByConditionInnerParam" resultType="cn.zhang.beans.Employee">
+		<!--  
+			bind:可以将OGNL表达式的值绑到一个变量中，方便后来引用这个值
+				value:是一个简单或者复杂的OGNL表达式
+				name:是将value中的值作为哪个值进行标记
+		-->
+		<!-- 
+			虽然这样能够实现自动将模糊查询需要的'%'或者'_'补充上,但是还是推荐在传参数的时候自己将数据上送完毕 
+			因为那样增加了灵活性
+		-->
+		<bind name="_lastName" value="'%' + lastName + '%'"/>
+		<!-- 
+			之前为了区分是mysql环境还是orcale环境  需要书写两次select语句  并使用databaseId进行区分 
+			如果我们配置了databaseIdProvider  就可以使用_databaseId这个内置参数进行区分了
+		-->
+		<if test="_databaseId == 'mysql'">
+			SELECT * FROM EMPLOYEE
+			<if test="_parameter != null">
+				WHERE LAST_NAME like #{_lastName}
+			</if>
+		</if>
+		<if test="_databaseId == 'oracle'">
+			SELECT * FROM EMPLOYEES
+		</if>
+	</select>
+	
+	<!-- 
+		抽取可重用的sql片段，方便后面引用 
+		id:抽取出来的可重用的sql的唯一标识  方便之后的include标签使用
+		1、sql标签:用来抽取可重用的sql，例如插入语句可重用的列名...
+		2、include配合sql标签一起使用
+		3、include标签中可以自定义一些property,sql标签的内部就可以使用这些自定义的属性
+			在sql标签中使用include标签中的property的时候
+			正确的取值方式是:使用${property里面的name属性}-取出的值是property里面对应的value属性
+			错误的取值方式是:使用#{property里面的name属性}
+	-->
+	<sql id="insertColumn">
+		LAST_NAME, EMAIL, ${testColumn}, D_ID
+	</sql>
+	
+	<select id="getEmpById" resultType="cn.zhang.beans.Employee">
+		SELECT * FROM EMPLOYEE WHERE ID = #{id}
+	</select>
+
+</mapper>
